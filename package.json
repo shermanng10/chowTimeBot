@@ -1,0 +1,23 @@
+{
+  "name": "foodbot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "Bot.js",
+  "scripts": {
+    "dev": "nodemon --exec babel-node src/App.js",
+    "build": "babel src -d output",
+    "start": "npm run build && node build/Bot.js"
+  },
+  "author": "Sherman Ng",
+  "license": "ISC",
+  "dependencies": {
+    "botkit": "^0.2.2",
+    "dotenv": "^2.0.0",
+    "yelp": "^1.0.1"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.11.4",
+    "babel-preset-es2015": "^6.9.0",
+    "nodemon": "^1.10.0"
+  }
+}
