@@ -4,7 +4,7 @@
   "description": "",
   "main": "Bot.js",
   "scripts": {
-    "dev": "nodemon --exec babel-node src/App.js",
+    "dev": "nodemon --exec babel-node src/App.js --ignore database",
     "build": "babel src -d output",
     "start": "npm run build && node build/Bot.js"
   },
