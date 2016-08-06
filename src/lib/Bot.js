@@ -1,4 +1,6 @@
 import Botkit from 'botkit'
+import Yelp from './Yelp'
+import {searchHandler} from '../helpers/BotCallbacks'
 
 const botController = Botkit.slackbot({
 	json_file_store: './database/'
@@ -20,5 +22,8 @@ botController.setupWebserver(process.env.PORT, (err,webserver) => {
 	    }
 	})
 })
+
+botController.hears('search', ['direct_message', 'direct_mention'], searchHandler)
+
 
 export default botController
