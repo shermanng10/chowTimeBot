@@ -14,6 +14,7 @@ botController.storage.teams.all((err, teams) => {
 	if (err){
 		throw new Error(err)
 	}
+	console.log(teams)
 	for (let t in teams){
 		if (teams[t].bot){
 			botController.spawn({token: teams[t].token}).startRTM((err, bot)=> {

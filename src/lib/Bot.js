@@ -1,9 +1,12 @@
 import Botkit from 'botkit'
 import Yelp from './Yelp'
-import {searchHandler} from '../helpers/BotCallbacks'
+import {searchHandler} from '../helpers/BotHelpers'
+import MongoDB from 'botkit-storage-mongo'
+
+const mongoStorage = new MongoDB({mongoUri: 'mongodb://localhost:27017/foodbot'})
 
 const botController = Botkit.slackbot({
-	json_file_store: './database/'
+	storage: mongoStorage
 }).configureSlackApp(
   {
   	clientId: process.env.CLIENT_ID,
@@ -24,6 +27,5 @@ botController.setupWebserver(process.env.PORT, (err,webserver) => {
 })
 
 botController.hears('search', ['direct_message', 'direct_mention'], searchHandler)
-
 
 export default botController
