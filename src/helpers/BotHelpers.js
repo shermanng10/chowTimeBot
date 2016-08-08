@@ -11,14 +11,13 @@ function searchHandler(bot, message){
 			for (let restaurant of dataArray) {
 				bot.reply(message, restaurant.name)
 			}
-			botController.storage.users.save({message: message}, function(err) { console.log(err)});
 		})
 	} catch (e){
 		bot.reply(message, e.message)
 	}
 }
 
-function randomizeTeamLeader(){
+function randomizeTeamLeader(bot, message){
 
 }
 
