@@ -1,9 +1,11 @@
+import VoteEvent from './VoteEvent'
+
 export default class Channel {
 	constructor(options = {}){
 		this.id = options.id
-		this._name = options.name
-		this._members = options.members
-		this._lunchLeader = null
+		this._name = options._name
+		this._members = options._members
+		this._voteEvent = options._voteEvent
 	}
 
 	getMembers(){
@@ -21,15 +23,15 @@ export default class Channel {
 		getMembers().push(member)
 	}
 
-	getLunchLeader(){
-		return this._lunchLeader
+	startVoteEvent(){
+		return this._voteEvent = new VoteEvent({id: this.id})
 	}
 
-	setLunchLeader(member){
-		return this._lunchLeader = member
+	getVoteEvent(){
+		return this._voteEvent = VoteEvent.toObj(this._voteEvent)
 	}
 
-	randomizeLeader(){
-		return setLunchLeader(getMembers()[Math.floor(Math.random()*this.members.length)])
+	static toObj(data){
+		return new Channel(data)
 	}
 }
