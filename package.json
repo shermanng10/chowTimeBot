@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon --exec babel-node src/App.js --ignore database",
     "build": "babel src -d output",
-    "start": "npm run build && node build/Bot.js"
+    "start": "npm run build && node output/App.js"
   },
   "author": "Sherman Ng",
   "license": "ISC",
