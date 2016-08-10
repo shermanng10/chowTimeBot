@@ -1,21 +1,41 @@
+import { mode } from '../helpers/FunctionHelpers'
+
 export default class VoteEvent {
 	constructor(options = {}){
 		this.id = options.id
 		this._voters = options._voters || []
-		this._restaurants = options.restaurants || {}
+		this._restaurants = options._restaurants || {}
 		this._votes = options._votes || {}
 		this._lunchLeader = options._lunchLeader || null
 		this._entryClosed = options._entryClosed || false
 		this._voteClosed = options._voteClosed || false
+		this._listFinalized = options._listFinalized || false
 	}
 
 	voteClosed(){
+		return this._voteClosed = true
+	}
+
+	entryClosed(){
+		return this._entryClosed = true
+	}
+
+	listFinalized(){
+		return this._listFinalized = true
+	}
+
+	getVoteClosed(){
 		return this._voteClosed
 	}
 
-	entryClose(){
+	getEntryClosed(){
 		return this._entryClosed
 	}
+
+	getListFinalized(){
+		return this._listFinalized
+	}
+
 
 	getVoters(){
 		return this._voters
@@ -37,11 +57,15 @@ export default class VoteEvent {
 	}
 
 	removeRestaurant(restaurant){
-		delete getRestaurants()[restaurant.name]
+		delete this.getRestaurants()[restaurant.name]
 	}
 
-	addRestaurant(restaurant){
-		getRestaurants()[restaurant.name] = restaurant
+	addRestaurant(restaurant, restaurantData){
+		if (Object.keys(this.getRestaurants()).length < 5){
+			return this._restaurants[restaurant] = restaurantData
+		} else {
+			throw new Error("The restaurant list is at max capacity, either remove a restaurant or start the voting.")
+		}
 	}
 
 	getVotes(){
@@ -52,8 +76,8 @@ export default class VoteEvent {
 		return this.getVotes()[user]
 	}
 
-	addVote(user, restaurant){
-		this.getVotes()[user] = restaurant.name
+	addVote(user, restaurantName){
+		this.getVotes()[user] = restaurantName
 	}
 
 	getLunchLeader(){
@@ -66,6 +90,10 @@ export default class VoteEvent {
 
 	randomizeLeader(){
 		return this.setLunchLeader(this.getVoters()[Math.floor(Math.random()*this.getVoters().length)])
+	}
+
+	getWinner(){
+		return mode(Object.values(this.getVotes()))
 	}
 
 	static toObj(data){
