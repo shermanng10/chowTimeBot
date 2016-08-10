@@ -20,7 +20,7 @@ export default class Channel {
 	}
 
 	addMember(member){
-		getMembers().push(member)
+		this.getMembers().push(member)
 	}
 
 	startVoteEvent(){
@@ -28,7 +28,9 @@ export default class Channel {
 	}
 
 	getVoteEvent(){
-		return this._voteEvent = VoteEvent.toObj(this._voteEvent)
+		if (this._voteEvent){
+			return this._voteEvent = VoteEvent.toObj(this._voteEvent)
+		}
 	}
 
 	static toObj(data){
