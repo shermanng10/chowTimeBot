@@ -6,31 +6,121 @@ import Channel from '../models/Channel'
 
 const yelp = new Yelp()
 
+function _tallyVotes(votes){
+
+}
+
+function _endVoting(){
+	botController.storage.channels.get(message.channel, (err, data) => {
+		let channel = Channel.toObj(data)
+		let voteEvent = channel.getVoteEvent()
+		voteEvent.voteClosed()
+		botController.storage.channels.save(channel)
+	})
+}
+
+function finalizeList(bot, message, cb){
+	botController.storage.channels.get(message.channel, (err, data) => { 
+		let channel = Channel.toObj(data)
+		let voteEvent = channel.getVoteEvent()
+		if (!voteEvent || message.user != voteEvent.getLunchLeader()){
+			bot.reply(message, "You either aren't the lunch leader or there is no vote event going on right now")
+		} else if ( message.user == voteEvent.getLunchLeader()){
+			voteEvent.listFinalized()
+			botController.storage.channels.save(channel)
+			bot.say({
+		   			text: "The list of restaurants have been finalized, you have 10 minutes to vote for your favorite.",
+		   			channel: message.channel}, (err, botReply) => {
+	    															setTimeout(() => {
+	    																voteEvent.voteClosed()
+																		botController.storage.channels.save(channel)
+	    																bot.say({
+	    																	text: `${voteEvent.getWinner()} is the winning restaurant!`,
+	    																	channel: message.channel
+	    																})
+	    															}, 7000)
+	    })														}
+	})
+}
+
 function searchHandler(bot, message){
 	try {
 		let searchParams = MessageParser.getSearchTerms(message)
-		yelp.getRestaurants(searchParams).then((dataArray) => { 
+		yelp.getRestaurants(searchParams).then((restaurantArray) => { 
 			botController.storage.channels.get(message.channel, (err, data) => {
-				console.log(data)
 				let channel = Channel.toObj(data)
 				let voteEvent = channel.getVoteEvent()
-				if (message.user != voteEvent.getLunchLeader()){
-					for (let restaurant of dataArray){
-						bot.reply(message, restaurant.name)
-					}
-				} else {
-					bot.reply(message, 'you da leader')
+				let attachmentArray = []
+				for (let restaurant of restaurantArray){
+					let restaurantName = restaurant.name.replace('.', '')
+					let restaurantRating = restaurant.rating
+					let restaurantUrl = restaurant.url
+					if (!voteEvent || message.user != voteEvent.getLunchLeader()){
+						attachmentArray.push({title: `${restaurantName} (${restaurantRating}/5 Stars)`,
+							                title_link: restaurantUrl,
+							                callback_id: 'addRestaurant',
+							                attachment_type: 'default'})
+					} else {
+						attachmentArray.push({
+							                title: `${restaurantName} (${restaurantRating}/5 Stars)`,
+							                title_link: restaurantUrl,
+							                callback_id: 'addRestaurant',
+							                attachment_type: 'default',
+							                actions: [
+							                    {
+							                        "name": restaurantName,
+							                        "text": "Add to list",
+							                        "value": `{"url": "${restaurantUrl}", "rating": "${restaurantRating}"}`,
+							                        "type": "button",
+							                    }
+							                ]
+							            })
+						}
 				}
+				bot.reply(message, { text: '', attachments: attachmentArray }, (err) => {console.log(err)})
 			})
 		})
-	} catch (e){
+	}
+	catch (e){
 		bot.reply(message, e.message)
 	}
 }
 
+function listRestaurantList(bot, message){
+	botController.storage.channels.get(message.channel, (err, data) => { 
+		let channel = Channel.toObj(data)
+		let voteEvent = channel.getVoteEvent()
+		if (voteEvent){
+			let attachmentArray = []
+			let restaurants = voteEvent.getRestaurants()
+			for (let restaurantName in restaurants){
+				let restaurantData = JSON.parse(restaurants[restaurantName])
+				let restaurantRating = restaurantData['rating']
+				let restaurantUrl = restaurantData['url']
+				attachmentArray.push({
+										title: `${restaurantName} (${restaurantRating}/5 Stars)`,
+										callback_id: 'castVote',
+						                title_link: restaurantUrl,
+						                attachment_type: 'default',
+						                actions: [{
+							                        "name": restaurantName,
+							                        "text": "Cast Vote",
+							                        "value": restaurantName,
+							                        "type": "button",
+							                    }]
+									})
+			}
+			bot.reply(message, { text: "List of Restaurants in the Running:", attachments: attachmentArray })
+		} else {
+			bot.reply(message, "There isn't an active vote, so theres nothing to list.")
+		}
+	})
+}
+
 function startVoteEvent(bot, message){
 	botController.storage.channels.get(message.channel, (err, data) => { 
-		let channel = Channel.toObj(data).startVoteEvent()
+		let channel = Channel.toObj(data)
+		channel.startVoteEvent()
 		botController.storage.channels.save(channel)
 	   	bot.say({
 	   			text: '',
@@ -64,6 +154,7 @@ function startVoteEvent(bot, message){
 	 				let channel = Channel.toObj(data)
 	 				let voteEvent = channel.getVoteEvent()
 					let lunchLeader = voteEvent.randomizeLeader()
+					voteEvent.entryClosed()
 					botController.storage.channels.save(channel)
 					bot.api.users.info({user: lunchLeader}, (err, data) => {
 						if (err) {
@@ -82,4 +173,4 @@ function startVoteEvent(bot, message){
 	})
 }
 
-export {searchHandler, startVoteEvent}
+export {searchHandler, startVoteEvent, listRestaurantList, finalizeList}
