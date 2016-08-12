@@ -1,8 +1,8 @@
 {
-  "name": "foodbot",
+  "name": "chowtime",
   "version": "1.0.0",
   "description": "",
-  "main": "Bot.js",
+  "main": "App.js",
   "scripts": {
     "dev": "nodemon --exec babel-node src/App.js --ignore database",
     "build": "babel src -d output",
