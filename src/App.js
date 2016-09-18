@@ -1,4 +1,5 @@
 import botController from './bot/Bot'
+import Promise from 'bluebird'
 import dotenv from 'dotenv'
 dotenv.config()
 
@@ -14,7 +15,7 @@ botController.storage.teams.all((err, teams) => {
   if (err) {
     throw new Error(err)
   }
-  for (let t in teams) {
+  for (const t in teams) {
     if (teams[t].bot) {
       botController.spawn({
         token: teams[t].token
@@ -22,6 +23,15 @@ botController.storage.teams.all((err, teams) => {
         if (err) {
           console.log('Error connecting bot to Slack:', err)
         } else {
+          // Promisify every method within spawned bots and slack api worker. Not my favorite
+          // thing to do, but much cleaner than when I individually wrote Promise wrappers for every function. 
+          Promise.promisifyAll(bot)
+          for (const apiGroup in bot.api){
+            if (typeof(bot.api[apiGroup]) === 'object') {
+              Promise.promisifyAll(bot.api[apiGroup])
+            }
+          }
+
           trackBot(bot)
         }
       })

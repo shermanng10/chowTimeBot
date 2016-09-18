@@ -1,10 +1,10 @@
-function getSearchTerms(message) {
-  let messageArray = message.text.replace('search', '').split(':')
+export function getSearchTerms(message) {
+  const messageArray = message.text.replace('search', '').split(':')
   if (message.text.match(/^\S+/)[0] != 'search' || messageArray.length <= 1) {
     throw new Error("Please follow the format search format of \"search cuisine/criteria : location\"")
   } else {
-    let searchCritera = messageArray[0]
-    let location = messageArray[1]
+    const searchCritera = messageArray[0]
+    const location = messageArray[1]
     return {
       term: searchCritera,
       location: location
@@ -12,7 +12,7 @@ function getSearchTerms(message) {
   }
 }
 
-function buildAttachment(options) {
+export function buildAttachment(options) {
   return JSON.parse(JSON.stringify({
     text: options.text,
     fallback: options.fallback,
@@ -25,7 +25,7 @@ function buildAttachment(options) {
   }))
 }
 
-function buildMessage(options) {
+export function buildMessage(options) {
   return JSON.parse(JSON.stringify({
     text: options.text,
     channel: options.channel,
@@ -36,7 +36,7 @@ function buildMessage(options) {
   }))
 }
 
-function buildAction(options) {
+export function buildAction(options) {
   return JSON.parse(JSON.stringify({
     name: options.name,
     text: options.text,
@@ -46,5 +46,3 @@ function buildAction(options) {
     confirm: options.confirmation
   }))
 }
-
-export { getSearchTerms, buildAttachment, buildMessage, buildAction } 

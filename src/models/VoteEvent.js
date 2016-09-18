@@ -1,4 +1,4 @@
-import { mode } from '../lib/FunctionLib'
+import { mode } from '../utils/FunctionHelpers'
 
 export default class VoteEvent {
   constructor(options = {}) {

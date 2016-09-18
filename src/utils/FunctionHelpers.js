@@ -1,15 +1,15 @@
-function mode(array) {
+export function mode(array) {
   if (array.length == 0) {
     return null
   }
-  let modeMap = {}
-  let maxEl = array[0],
-    maxCount = 1;
+  const modeMap = {}
+  let maxEl = array[0]
+  let maxCount = 1
   array.forEach(x => {
     if (modeMap[x] == null) {
       modeMap[x] = 1
     } else {
-      modeMap[x]++;
+      modeMap[x]++
     }
     if (modeMap[x] > maxCount) {
       maxEl = x
@@ -19,10 +19,8 @@ function mode(array) {
   return maxEl
 }
 
-function timeout(delay){
+export function timeout(delay){
   return new Promise((resolve, reject) => {
     setTimeout(resolve, delay)
   })
 }
-
-export { mode, timeout }

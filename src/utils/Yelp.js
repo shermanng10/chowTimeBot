@@ -12,7 +12,7 @@ export default class Yelp {
     })
   }
 
-  getRestaurants({term: term, location:location}) {
+  getRestaurants({ term, location }) {
     return this.client.search({
       term: term,
       location: location,
