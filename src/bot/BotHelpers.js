@@ -3,14 +3,15 @@ import Channel from '../models/Channel'
 
 export async function createChannel(bot, srcMsg){
   try {
-    var { channel } = await botGetPublicChannelInfo(bot, srcMsg)
+    var { channel } = await bot.api.channels.infoAsync({ channel: srcMsg.channel })
   } catch(e){
     try {
-      var { channel } = await botGetPrivateGroupInfo(bot, srcMsg)
+      var { channel } = await bot.api.groups.infoAsync({ group: srcMsg.channel }).group
     } catch(e){
       console.log(e)
     }
   }
+
   let cChannel = new Channel({
     id: channel.id,
     _name: channel.name,

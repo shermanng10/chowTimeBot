@@ -7,18 +7,13 @@ import { getChannelFromDB } from './BotHelpers'
 
 const yelp = new Yelp()
 
-export async function unknownCommandHandler(bot, srcMsg){
-  let message = `I didn't understand that command, you can view a list of my commands by typing *'@foodbot help'*`
-  try {
-    const { channel } = await getChannelFromDB(bot, srcMsg)
-  } catch(e) {
-    message = e.message
-  }
+export function unknownCommandHandler(bot, srcMsg){
+  const message = `I didn't understand that command, you can view a list of my commands by typing *'@foodbot help'*`
   bot.replyAsync(srcMsg, message)
 }
 
-export async function helpHandler(bot, srcMsg) {
-  let message = `Hi, I'm a bot that can help your team find, select and vote on where to eat lunch.
+export function helpHandler(bot, srcMsg) {
+  const message = `Hi, I'm a bot that can help your team find, select and vote on where to eat lunch.
 \ *To start a vote*: use the command '@foodbot start vote'. Once a vote has started team members can opt into the vote\
 \   within the alloted time and after, a leader is chosen at random. 
 \ *To search for restaurants*: use the command '@foodbot search [search terms] : [location]'. If you are the leader of the vote\
@@ -202,13 +197,13 @@ export async function listRestaurantHandler(bot, srcMsg) {
   try {
     const { channel, voteEvent } = await getChannelFromDB(bot, srcMsg)
     if (voteEvent) {
-      let attachmentArray = []
-      let restaurants = voteEvent.getRestaurants()
-      for (let restaurantName in restaurants) {
-        let restaurantData = restaurants[restaurantName]
-        let restaurantRating = restaurantData['rating']
-        let restaurantUrl = restaurantData['url']
-        let attachment = buildAttachment({
+      const attachmentArray = []
+      const restaurants = voteEvent.getRestaurants()
+      for (const restaurantName in restaurants) {
+        const restaurantData = restaurants[restaurantName]
+        const restaurantRating = restaurantData['rating']
+        const restaurantUrl = restaurantData['url']
+        const attachment = buildAttachment({
           title: `${restaurantName} (${restaurantRating}/5 Stars)`,
           callback_id: 'castVote',
           title_link: restaurantUrl,

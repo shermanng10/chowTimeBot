@@ -1,6 +1,6 @@
 import Botkit from 'botkit'
-import { unknownCommandHandler, helpHandler, searchHandler, startVoteHandler, listRestaurantHandler, finalizeListHandler } from './BotListenerCallbacks'
-import { joinEventHandler, editListHandler, castVoteHandler } from './InteractiveListenerCallbacks'
+import { unknownCommandHandler, helpHandler, searchHandler, startVoteHandler, listRestaurantHandler, finalizeListHandler } from './ListenerCallbacks'
+import { joinEventHandler, editListHandler, castVoteHandler } from './InteractiveCallbacks'
 import { getChannelFromDB } from './BotHelpers'
 import MongoDB from 'botkit-storage-mongo'
 import Channel from '../models/Channel'
@@ -37,16 +37,18 @@ botController.setupWebserver(process.env.PORT, (err, webserver) => {
 })
 
 botController.on('channel_joined', (bot, message) => {
-  bot.api.channels.infoAsync({ channel: message.channel.id }).then(info => {
-    console.log(info)
-    const cChannel = new Channel({
-      id: info.channel.id,
-      _name: info.channel.name,
-      _members: info.channel.members
-    })
-    botController.storage.channels.save(cChannel)
-
+  bot.api.channels.infoAsync({
+    channel: message.channel.id
   })
+    .then(info => {
+      const cChannel = new Channel({
+        id: info.channel.id,
+        _name: info.channel.name,
+        _members: info.channel.members
+      })
+      botController.storage.channels.save(cChannel)
+
+    })
 })
 
 

@@ -1,17 +1,6 @@
 import botController from './Bot'
 import { getChannelFromDB } from './BotHelpers'
 
-export async function helpHandler(bot, srcMsg) {
-  let message = `Hi, I'm a bot that can help your team find, select and vote on where to eat lunch.
-\ *To start a vote*: use the command '@foodbot start vote'. Once a vote has started team members can opt into the vote\
-\   within the alloted time and after, a leader is chosen at random. 
-\ *To search for restaurants*: use the command '@foodbot search [search terms] : [location]'. If you are the leader of the vote\
-\   you have the option of adding or removing the results to the lunch list. 
-\ *To view list of voting options*: use the command '@foodbot list'. 
-\ *To finalize list of options*: use the command '@foodbot finalize' (only works for leader).`
-  bot.replyAsync(srcMsg, message)
-}
-
 export async function joinEventHandler(bot, srcMsg){
   try {
     const { channel , voteEvent } = await getChannelFromDB(bot, srcMsg)
