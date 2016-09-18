@@ -6,12 +6,11 @@ dotenv.config()
 // Store initialized bots in a map so that no additional RTM connections are made on create_bot
 let _bots = {}
 
-function handleSpawnedBot(bot) {
-
+export function handleSpawnedBot(bot) {
   // track the initialized bot into the map
   _bots[bot.config.token] = bot
 
-  // Promisify every method within spawned bots and slack api worker. Not my loving it,
+  // Promisify every method within spawned bots and slack api worker. Not my loving it
   // but much cleaner than when I individually wrote Promise wrappers for every function. 
   Promise.promisifyAll(bot)
 
@@ -25,9 +24,12 @@ function handleSpawnedBot(bot) {
 
 }
 
+botController.middleware.spawn.use((worker, next) => {
+  handleSpawnedBot(worker)
+  next();
+})
 // Used to spawn past RTM connections in the event that App needs to be restarted.
 botController.storage.teams.all((err, teams) => {
-
   if (err) {
     throw new Error(err)
   }

@@ -7,32 +7,33 @@ import { getChannelFromDB } from './BotHelpers'
 
 const yelp = new Yelp()
 
-export function unknownCommandHandler(bot, srcMsg){
+export function unknownCommandHandler(bot, srcMsg) {
   const message = `I didn't understand that command, you can view a list of my commands by typing *'@foodbot help'*`
   bot.replyAsync(srcMsg, message)
 }
 
 export function helpHandler(bot, srcMsg) {
   const message = `Hi, I'm a bot that can help your team find, select and vote on where to eat lunch.
-\ *To start a vote*: use the command '@foodbot start vote'. Once a vote has started team members can opt into the vote\
-\   within the alloted time and after, a leader is chosen at random. 
-\ *To search for restaurants*: use the command '@foodbot search [search terms] : [location]'. If you are the leader of the vote\
-\   you have the option of adding or removing the results to the lunch list. 
-\ *To view list of voting options*: use the command '@foodbot list'. 
-\ *To finalize list of options*: use the command '@foodbot finalize' (only works for leader).`
+ *To start a vote*: use the command '@foodbot start vote'. Once a vote has started team members can opt into the vote   within the alloted time and after, a leader is chosen at random. 
+ *To search for restaurants*: use the command '@foodbot search [search terms] : [location]'. If you are the leader of the vote   you have the option of adding or removing the results to the lunch list. 
+ *To view list of voting options*: use the command '@foodbot list'. 
+ *To finalize list of options*: use the command '@foodbot finalize' (only works for leader).`
   bot.replyAsync(srcMsg, message)
 }
 
 async function closeVote(bot, srcMsg, botReply) {
   try {
-    const { channel, voteEvent } = await getChannelFromDB(bot, srcMsg)
+    const {channel, voteEvent} = await getChannelFromDB(bot, srcMsg)
     const lunchLeader = voteEvent.randomizeLeader()
     let message_text = '*Not enough users joined the vote! At least one person needs to join.*'
+
     voteEvent.entryClosed()
-    if (!lunchLeader) { 
-      voteEvent.voteClosed()
-    }
+
+    if (!lunchLeader) voteEvent.voteClosed()
+
     botController.storage.channels.save(channel)
+
+    // console.log(bot.api)
     bot.api.chat.updateAsync({
       as_user: true,
       ts: botReply.ts,
@@ -40,15 +41,30 @@ async function closeVote(bot, srcMsg, botReply) {
       text: '*Voting has closed!*',
       attachments: '[]'
     })
-      .then(() => bot.api.user.infoAsync({ user: lunchLeader}))
-      .then(data => message_text = `*${data.user.name} has been randomly selected as the lunch leader!*`)
-      .catch((err)=> console.log(err))
       .then(() => {
-        bot.sayAsync({
+
+        if (lunchLeader) {
+          return bot.api.users.infoAsync({
+            user: lunchLeader
+          })
+            .then(data => {
+              return message_text = `*${data.user.name} has been randomly selected as the lunch leader!*`
+            })
+        } else {
+          return Promise.resolve()
+        }
+
+      })
+      .then(() => {
+        return bot.sayAsync({
           text: message_text,
           channel: botReply.channel,
         })
       })
+      .catch(e => {
+        console.log(e.message)
+      })
+
   } catch (e) {
     bot.replyAsync(srcMsg, e.message)
   }
@@ -56,95 +72,105 @@ async function closeVote(bot, srcMsg, botReply) {
 
 export async function startVoteHandler(bot, srcMsg) {
   try {
-    const { channel } = await getChannelFromDB(bot, srcMsg)
+    const {channel, voteEvent} = await getChannelFromDB(bot, srcMsg)
+
     channel.startVoteEvent()
-    const voteEvent = channel.voteEvent
+
     const yesAction = buildAction({
       name: "yes",
       text: "Yes",
       value: "yes",
       style: "primary",
-      type: "button"
     })
+
     const noAction = buildAction({
       name: "no",
       text: "No",
       value: "no",
       style: "danger",
-      type: "button"
     })
+
     const attachment = buildAttachment({
       title: 'A lunch event has been started! Please confirm within 5 minutes if you would like to be part of the vote.',
       callback_id: 'joinEvent',
-      attachment_type: 'default',
       actions: [yesAction, noAction]
     })
+
     const msg = buildMessage({
-      text: '',
       channel: srcMsg.channel,
       attachments: [attachment]
     })
+
     botController.storage.channels.save(channel)
+
     bot.sayAsync(msg)
-      .then((resMsg) => timeout(7000)
+      .then(resMsg => timeout(7000)
         .then(() => closeVote(bot, srcMsg, resMsg))
     )
+
   } catch (e) {
     bot.replyAsync(srcMsg, e.message)
   }
 }
 
 function buildSearchResponse(srcMsg, searchParams, channelInfo) {
-  try {
-    return yelp.getRestaurants(searchParams).then((restaurantArray) => {
-      let attachmentArray = []
-      for (let restaurant of restaurantArray) {
-        let restaurantName = restaurant.name.replace('.', '')
-        let restaurantRating = restaurant.rating
-        let restaurantUrl = restaurant.url
-        let addAction = buildAction({
+  return yelp.getRestaurants(searchParams)
+    .then(restaurantArray => {
+      const attachmentArray = []
+
+      for (const restaurant of restaurantArray) {
+        const restaurantName = restaurant.name.replace('.', '')
+        const restaurantRating = restaurant.rating
+        const restaurantUrl = restaurant.url
+
+        const addAction = buildAction({
           name: "add",
           text: "Add to List",
-          type: "button",
           style: "primary",
           value: `{"name": "${restaurantName}", "url": "${restaurantUrl}", "rating": "${restaurantRating}"}`
         })
-        let removeAction = buildAction({
+
+        const removeAction = buildAction({
           name: "remove",
           text: "Remove from List",
-          type: "button",
           style: "danger",
           value: `{"name": "${restaurantName}", "url": "${restaurantUrl}", "rating": "${restaurantRating}"}`
         })
-        let attachment = buildAttachment({
+
+        const attachment = buildAttachment({
           title: `${restaurantName} (${restaurantRating}/5 Stars)`,
           title_link: restaurantUrl,
           callback_id: 'editList',
           attachment_type: "default",
           actions: [addAction, removeAction]
         })
+
         if (!channelInfo.voteEvent || srcMsg.user != channelInfo.voteEvent.getLunchLeader()) {
           delete attachment["actions"]
         }
+
         attachmentArray.push(attachment)
       }
+
       return buildMessage({
-        text: '',
         attachments: attachmentArray
       })
     })
-  } catch (e) {
-    bot.replyAsync(srcMsg, e.message)
-  }
 }
 
 export async function searchHandler(bot, srcMsg) {
   try {
-    const { channel, voteEvent } = await getChannelFromDB(bot, srcMsg)
-    let channelInfo = await getChannelFromDB(bot, srcMsg)
-    let searchParams = getSearchTerms(srcMsg)
+    const channelInfo = await getChannelFromDB(bot, srcMsg)
+    const searchParams = getSearchTerms(srcMsg)
+
     buildSearchResponse(srcMsg, searchParams, channelInfo)
-      .then(messageResponse => bot.replyAsync(srcMsg, messageResponse))
+      .then(messageResponse => {
+        return bot.replyAsync(srcMsg, messageResponse)
+      })
+      .catch(e => {
+        return bot.replyAsync(srcMsg, e.message)
+      })
+
   } catch (e) {
     bot.replyAsync(srcMsg, e.message)
   }
@@ -164,21 +190,21 @@ function finalizeList(bot, srcMsg, channel, voteEvent) {
 
 async function getWinner(bot, srcMsg) {
   try {
-    const { channel, voteEvent } = await getChannelFromDB(bot, srcMsg)
+    const {channel, voteEvent} = await getChannelFromDB(bot, srcMsg)
     voteEvent.voteClosed()
     botController.storage.channels.save(channel)
     bot.sayAsync({
       text: `*${voteEvent.getWinner()} is the winning restaurant!*`,
       channel: srcMsg.channel
     })
-  } catch(e) {
+  } catch (e) {
     bot.replyAsync(srcMsg, e.message)
   }
 }
 
 export async function finalizeListHandler(bot, srcMsg) {
   try {
-    const { channel, voteEvent } = await getChannelFromDB(bot, srcMsg)
+    const {channel, voteEvent} = await getChannelFromDB(bot, srcMsg)
     finalizeList(bot, srcMsg, channel, voteEvent)
       .then(() => {
         bot.sayAsync({
@@ -195,19 +221,20 @@ export async function finalizeListHandler(bot, srcMsg) {
 
 export async function listRestaurantHandler(bot, srcMsg) {
   try {
-    const { channel, voteEvent } = await getChannelFromDB(bot, srcMsg)
+    const {channel, voteEvent} = await getChannelFromDB(bot, srcMsg)
+
     if (voteEvent) {
       const attachmentArray = []
       const restaurants = voteEvent.getRestaurants()
+
       for (const restaurantName in restaurants) {
         const restaurantData = restaurants[restaurantName]
-        const restaurantRating = restaurantData['rating']
-        const restaurantUrl = restaurantData['url']
+        const { restaurantRating, restaurantUrl} = restaurantData
+
         const attachment = buildAttachment({
           title: `${restaurantName} (${restaurantRating}/5 Stars)`,
           callback_id: 'castVote',
           title_link: restaurantUrl,
-          attachment_type: 'default',
           actions: [{
             "name": restaurantName,
             "text": "Cast Vote",
@@ -215,19 +242,21 @@ export async function listRestaurantHandler(bot, srcMsg) {
             "type": "button",
           }]
         })
-        if (voteEvent.getLunchLeader() == srcMsg.user && !voteEvent.getListFinalized()){
+
+        if (voteEvent.getLunchLeader() === srcMsg.user && !voteEvent.getListFinalized()) {
           attachment["callback_id"] = 'editList'
           attachment["actions"] = [buildAction({
             name: "remove",
             text: "Remove from List",
-            type: "button",
             style: "danger",
             value: `{"name": "${restaurantName}", "url": "${restaurantUrl}", "rating": "${restaurantRating}"}`
           })]
         }
-        if (!voteEvent.getLunchLeader() == srcMsg.user && !voteEvent.getListFinalized()){
+
+        if (!voteEvent.getLunchLeader() === srcMsg.user && !voteEvent.getListFinalized()) {
           delete attachment["actions"]
         }
+
         attachmentArray.push(attachment)
       }
       bot.replyAsync(srcMsg, {
@@ -237,6 +266,7 @@ export async function listRestaurantHandler(bot, srcMsg) {
     } else {
       bot.replyAsync(srcMsg, "*There isn't an active vote, so theres nothing to list.*")
     }
+
   } catch (e) {
     bot.replyAsync(srcMsg, e.message)
   }

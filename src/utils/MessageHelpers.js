@@ -20,14 +20,14 @@ export function buildAttachment(options) {
     title: options.title,
     title_link: options.title_link,
     callback_id: options.callback_id,
-    attachment_type: options.attachment_type,
+    attachment_type: options.attachment_type || 'default',
     actions: options.actions
   }))
 }
 
 export function buildMessage(options) {
   return JSON.parse(JSON.stringify({
-    text: options.text,
+    text: options.text || '',
     channel: options.channel,
     attachments: options.attachments,
     response_type: options.response_type,
@@ -41,7 +41,7 @@ export function buildAction(options) {
     name: options.name,
     text: options.text,
     style: options.style,
-    type: options.type,
+    type: options.type || 'button',
     value: options.value,
     confirm: options.confirmation
   }))

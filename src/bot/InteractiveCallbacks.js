@@ -9,11 +9,13 @@ export async function joinEventHandler(bot, srcMsg){
 
     if (srcMsg.actions[0].value == 'yes') {
       voteEvent.addVoter(payload.user.id)
-      response_text = "*You've joined the lunch event!*"
+      response_text = `*${payload.user.name} joined the lunch event!*`
     } else if (srcMsg.actions[0].value == 'no') {
       voteEvent.removeVoter(payload.user.id)
-      response_text = "*You've removed yourself from the lunch event!*"
+      response_text = `*${payload.user.name} removed themselves from the lunch event!*`
     }
+
+    botController.storage.channels.save(channel)
 
     bot.api.chat.updateAsync({
       as_user: true,
@@ -21,9 +23,6 @@ export async function joinEventHandler(bot, srcMsg){
       channel: srcMsg.channel,
       text: response_text
     })
-
-    botController.storage.channels.save(channel)
-
   }
   catch(e) {
     bot.replyAsync(srcMsg, `*${e.message}*`)

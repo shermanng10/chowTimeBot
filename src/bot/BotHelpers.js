@@ -1,6 +1,7 @@
 import botController from './Bot'
 import Channel from '../models/Channel'
 
+
 export async function createChannel(bot, srcMsg){
   try {
     var { channel } = await bot.api.channels.infoAsync({ channel: srcMsg.channel })
@@ -24,12 +25,14 @@ export async function createChannel(bot, srcMsg){
 export function getChannelFromDB(bot, srcMsg) {
   return new Promise((resolve, reject) => {
     botController.storage.channels.get(srcMsg.channel, (err, data) => {
+
       if (err !== null) {
         reject(err)
       }
       else if (data == null){
         return resolve(createChannel(bot, srcMsg))
       }
+      
       const channel = Channel.toObj(data)
       const voteEvent = channel.getVoteEvent()
       resolve({
