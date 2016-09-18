@@ -1,7 +1,7 @@
 import Botkit from 'botkit'
-import { unknownCommandHandler, helpHandler, searchHandler, startVoteHandler, listRestaurantHandler, finalizeListHandler } from './BotListenerCallbacks'
-import { joinEventHandler, editListHandler, castVoteHandler } from './InteractiveListenerCallbacks'
-import { getChannelFromDB, botReply, botSay, botChatUpdate, botGetUserInfo, botGetPublicChannelInfo } from './BotHelpers'
+import { unknownCommandHandler, helpHandler, searchHandler, startVoteHandler, listRestaurantHandler, finalizeListHandler } from './ListenerCallbacks'
+import { joinEventHandler, editListHandler, castVoteHandler } from './InteractiveCallbacks'
+import { getChannelFromDB } from './BotHelpers'
 import MongoDB from 'botkit-storage-mongo'
 import Channel from '../models/Channel'
 
@@ -21,30 +21,39 @@ const botController = Botkit.slackbot({
 )
 
 botController.setupWebserver(process.env.PORT, (err, webserver) => {
+
   botController.createWebhookEndpoints(botController.webserver)
+
   botController.createOauthEndpoints(botController.webserver, (err, req, res) => {
+
     if (err) {
       res.status(500).send('ERROR: ' + err)
     } else {
       res.send('Successfully authenticated! Foodbot has joined your team!')
     }
+
   })
+
 })
 
 botController.on('channel_joined', (bot, message) => {
-  botGetPublicChannelInfo.then((info) => {
-    let channel = info.channel
-    let cChannel = new Channel({
-      id: channel.id,
-      _name: channel.name,
-      _members: channel.members
-    })
-    botController.storage.channels.save(cChannel)
+  bot.api.channels.infoAsync({
+    channel: message.channel.id
   })
+    .then(info => {
+      const cChannel = new Channel({
+        id: info.channel.id,
+        _name: info.channel.name,
+        _members: info.channel.members
+      })
+      botController.storage.channels.save(cChannel)
+
+    })
 })
 
 
 botController.on('interactive_message_callback', (bot, message) => {
+
   if (message.callback_id == 'joinEvent') {
     joinEventHandler(bot, message)
   } else if (message.callback_id == 'editList') {
@@ -52,6 +61,7 @@ botController.on('interactive_message_callback', (bot, message) => {
   } else if (message.callback_id == 'castVote') {
     castVoteHandler(bot, message)
   }
+
 })
 
 botController.hears('help', ['direct_mention'], helpHandler)
